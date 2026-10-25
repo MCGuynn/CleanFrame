@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
-    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.software.leanback" android:required="true" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <!-- Lets the launcher see every app that can be opened from a TV home screen. -->
@@ -43,16 +43,15 @@
             android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density|fontScale"
             android:windowSoftInputMode="adjustNothing">
-            <!-- Home app: chosen by TV Box Tools as the HOME handler. -->
+            <!-- One filter, the same shape as Arc Launcher / FLauncher: a HOME app that is also a TV
+                 launcher in the app list. Launcher tools (TV Box Tools) look for HOME and
+                 LEANBACK_LAUNCHER together on one activity. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-            <!-- Also appears in the Google TV app list, so it can be opened before it is Home. -->
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                <category android:name="android.intent.category.LAUNCHER_APP" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

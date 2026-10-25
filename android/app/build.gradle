@@ -30,8 +30,8 @@ android {
         applicationId 'app.cleanframe'
         minSdk 26
         targetSdk 34
-        versionCode 3
-        versionName '0.6.1-tv3'
+        versionCode 4
+        versionName '0.6.1-tv4'
     }
 
     signingConfigs {
