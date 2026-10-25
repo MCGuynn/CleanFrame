@@ -2,7 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Network status line and Arc-style Wi-Fi usage counter. No INTERNET: the UI is fully offline. -->
+    <!-- Unsplash wallpapers (only when you add an access key). The UI itself is offline. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Network status line and Arc-style Wi-Fi usage counter. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"

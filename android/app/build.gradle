@@ -11,7 +11,8 @@ def syncWeb = tasks.register('syncCleanFrameWeb', Sync) {
     from(rootProject.file('web'))
     filesMatching('index.html') {
         filter { String line ->
-            line.replace('<script src="device.js"></script>', '<script src="device.js"></script>\n<script src="platform.js"></script>')
+            /* platform.js runs after the wallpaper catalogue and icon metrics so it can extend them. */
+            line.replace('<script src="main.js"></script>', '<script src="platform.js"></script>\n<script src="main.js"></script>')
                 .replace('<link rel="stylesheet" href="style.css">', '<link rel="stylesheet" href="style.css">\n<link rel="stylesheet" href="android.css">')
                 .replace('<html lang="en-AU">', '<html lang="en">')
                 /* A fixed 1920-wide viewport: the WebView zooms it to the screen, so CleanFrame's
@@ -29,8 +30,8 @@ android {
         applicationId 'app.cleanframe'
         minSdk 26
         targetSdk 34
-        versionCode 2
-        versionName '0.6.1-tv2'
+        versionCode 3
+        versionName '0.6.1-tv3'
     }
 
     signingConfigs {

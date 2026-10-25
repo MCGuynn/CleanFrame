@@ -1,20 +1,24 @@
 /* CleanFrame for Google TV: platform layer read by main.js (window.CleanFramePlatform).
    Supplies Android app targets, Google TV wording, and the Arc Launcher-style options:
    clock format, status line (date, network, Wi-Fi usage), Back button action,
-   navigation sounds and screensaver shortcuts. ES5 only, like the rest of the UI. */
+   navigation sounds, screensaver shortcuts, white app marks, a longer scrolling Home
+   row and Unsplash wallpapers. ES5 only, like the rest of the UI.
+   Loaded after the wallpaper catalogue and icon metrics, just before main.js. */
 (function () {
   'use strict';
   function N() { return window.CleanFrameNative || null; }
 
   /* ---------- Preferences (native SharedPreferences, localStorage in a browser) ---------- */
-  var DEFAULTS = { clock: '12', date: 'on', network: 'off', usage: 'off', back: 'ask', sound: 'off' };
+  var DEFAULTS = { clock: '12', date: 'on', network: 'off', usage: 'off', back: 'ask', sound: 'off', marks: 'white' };
+  var HOME_CAP = 24;
   var CHOICES = {
     clock: [['12', '12-hour'], ['24', '24-hour']],
     date: [['on', 'Shown'], ['off', 'Hidden']],
     network: [['on', 'Shown'], ['off', 'Hidden']],
     usage: [['off', 'Off'], ['day', 'Today'], ['week', 'This week'], ['month', 'This month']],
     back: [['ask', 'Ask before leaving'], ['none', 'Do nothing'], ['clock', 'Show clock'], ['screensaver', 'Start screensaver']],
-    sound: [['off', 'Off'], ['on', 'On']]
+    sound: [['off', 'Off'], ['on', 'On']],
+    marks: [['white', 'White (Arc style)'], ['color', 'Original colours']]
   };
   function getPref(key) {
     var v = null;
@@ -45,22 +49,60 @@
     { id: 'spotify', name: 'Spotify', pkgs: ['com.spotify.tv.android'] },
     { id: 'stremio', name: 'Stremio', pkgs: ['com.stremio.one'] },
     { id: 'plex', name: 'Plex', pkgs: ['com.plexapp.android'] },
+    { id: 'crunchyroll', name: 'Crunchyroll', pkgs: ['com.crunchyroll.crunchyroid'], label: /crunchyroll/i },
+    { id: 'fubo', name: 'fubo', pkgs: ['com.fubo.firetv.screen', 'com.fubotv.android', 'tv.fubo.mobile'], label: /^fubo/i },
     { id: 'abciview', name: 'ABC iview', pkgs: ['au.net.abc.iview'] },
     { id: 'sbs', name: 'SBS On Demand', pkgs: ['com.sbs.ondemand.tv'] }
   ];
   function installed(pkg) { try { return N().isInstalled(pkg); } catch (e) { return false; } }
+  var apps = [];
+  try { apps = N() ? JSON.parse(N().installedApps()) : []; } catch (e) { apps = []; }
   var primary = [];
   KNOWN.forEach(function (k) {
     var pkg = null;
     if (!N()) pkg = k.pkgs[0];
     else k.pkgs.forEach(function (p) { if (!pkg && installed(p)) pkg = p; });
-    if (pkg && primary.length < 9) primary.push({ id: k.id, name: k.name, mark: true, appId: pkg });
+    /* Unknown package name: fall back to the app's label (fubo, Crunchyroll builds vary). */
+    if (!pkg && k.label) apps.forEach(function (a) { if (!pkg && k.label.test(a.name)) pkg = a.pkg; });
+    if (pkg && primary.length < HOME_CAP) primary.push({ id: k.id, name: k.name, mark: true, appId: pkg });
   });
+
+  /* White marks made on the TV from each app's own logo layer (see DeviceMarks.java). */
+  var markIds = [];
+  if (N() && getPref('marks') === 'white') {
+    try {
+      var made = JSON.parse(N().deviceMarks());
+      window.FrameIconMetrics = window.FrameIconMetrics || {};
+      Object.keys(made).forEach(function (id) { window.FrameIconMetrics[id] = made[id]; markIds.push(id); });
+    } catch (e) { markIds = []; }
+  }
   function brandFor(pkg) {
     for (var i = 0; i < primary.length; i++) if (primary[i].appId === pkg) return primary[i].id;
-    return '';
+    return markIds.indexOf('pkg-' + pkg) >= 0 ? 'pkg-' + pkg : '';
   }
   function primaryById(id) { for (var i = 0; i < primary.length; i++) if (primary[i].id === id) return primary[i]; return null; }
+
+  /* ---------- Unsplash wallpapers ---------- */
+  var unsplash = [];
+  try { unsplash = N() ? JSON.parse(N().unsplashPhotos()) : []; } catch (e) { unsplash = []; }
+  if (window.CleanFrameWallpapers && unsplash.length) {
+    unsplash.forEach(function (u) {
+      if (!/^u-[A-Za-z0-9_-]+$/.test(u.id)) return;
+      window.CleanFrameWallpapers.push({ id: u.id, name: String(u.name).slice(0, 80), src: 'assets/wallpapers/' + u.id + '.jpg',
+        thumb: 'assets/wallpapers/' + u.id + '-thumb.jpg', tone: u.tone === 'light' ? 'light' : 'dark',
+        ut: { tr: u.ut && u.ut.tr === 'mist' ? 'mist' : 'light', br: u.ut && u.ut.br === 'mist' ? 'mist' : 'light' },
+        frostVeil: 0.12, listColumn: 0, dockQuiet: false, clockMist: false, author: u.author });
+    });
+  }
+  function savedLook() { try { return JSON.parse(window.localStorage.getItem('cleanframe.home.v1')) || {}; } catch (e) { return {}; } }
+  /* Unsplash asks for the photographer's name wherever their photo is shown. */
+  function photoCredit() {
+    var look = savedLook(), id = look.wall, bg = look.bg || (look.look && look.look.bg);
+    if (!id || String(id).indexOf('u-') !== 0 || (bg && bg !== 'photo')) return '';
+    for (var i = 0; i < unsplash.length; i++) if (unsplash[i].id === id) return 'Photo: ' + unsplash[i].author + ' / Unsplash';
+    return '';
+  }
+  function unsplashInfo() { try { return N() ? JSON.parse(N().unsplashInfo()) : {}; } catch (e) { return {}; } }
 
   /* ---------- Status line (Arc's date / network / Wi-Fi usage widgets) ---------- */
   function nativeStatus() { try { return JSON.parse(N().status()); } catch (e) { return null; } }
@@ -81,6 +123,8 @@
       if (st.usage === -2) parts.push('Wi‑Fi usage needs access');
       else if (st.usage >= 0) parts.push(bytes(st.usage) + ' ' + PERIOD[getPref('usage')]);
     }
+    var credit = photoCredit();
+    if (credit) parts.push(credit);
     return parts.join('  ·  ');
   }
 
@@ -152,6 +196,10 @@
           item('arc.network', 'Network', nameOf('network')),
           item('arc.usage', 'Wi\u2011Fi usage', nameOf('usage') + (getPref('usage') !== 'off' && usageNeedsAccess() ? ' \u2014 needs usage access (below)' : ''))
         ] },
+        { id: 'arc-home', title: 'Home', items: [
+          item('arc.marks', 'App icons', nameOf('marks') + ' \u2014 takes effect when you press Home')
+        ] },
+        { id: 'arc-unsplash', title: 'Unsplash wallpapers', items: unsplashItems() },
         { id: 'arc-remote', title: 'Remote', items: [
           item('arc.back', 'Back button on Home', nameOf('back')),
           item('arc.sound', 'Navigation sounds', nameOf('sound'))
@@ -160,7 +208,18 @@
       ];
     }
   };
-  var ARC = { 'arc.clock': 'clock', 'arc.date': 'date', 'arc.network': 'network', 'arc.usage': 'usage', 'arc.back': 'back', 'arc.sound': 'sound' };
+  function unsplashItems() {
+    var u = unsplashInfo(), list = [
+      item('unsplash.key', 'Access key', u.keySet ? 'Saved ' + (u.keyHint || '') : 'Not set \u2014 press OK to enter your developer key'),
+      item('unsplash.user', 'Your username', u.user ? '@' + u.user + (u.collections ? ' \u00b7 ' + u.collections + ' collections' : '') : 'Optional \u2014 to use your collections'),
+      item('unsplash.source', 'Photos from', u.source || 'Unsplash landscapes'),
+      item('unsplash.fetch', 'Get new photos', u.busy || u.status ? (u.status || 'Working\u2026') : (u.photos ? u.photos + (u.photos === 1 ? ' photo' : ' photos') + ' in Wallpaper' : 'Adds 10 photos to Wallpaper'))
+    ];
+    if (u.photos) list.push(item('unsplash.clear', 'Remove Unsplash photos', u.photos + (u.photos === 1 ? ' photo' : ' photos') + ' saved on the TV'));
+    return list;
+  }
+  function currentWall() { return String(savedLook().wall || ''); }
+  var ARC = { 'arc.clock': 'clock', 'arc.date': 'date', 'arc.network': 'network', 'arc.usage': 'usage', 'arc.back': 'back', 'arc.sound': 'sound', 'arc.marks': 'marks' };
   var SYS = { 'sys.home': ['Google TV Home', 'home'], 'sys.settings': ['TV settings', 'settings'], 'sys.wifi': ['Network and internet', 'wifi'],
     'sys.dream': ['Screensaver settings', 'dream'], 'sys.usage': ['Usage access', 'usage'] };
   function action(id, perform) {
@@ -168,6 +227,18 @@
       cycle(ARC[id]);
       if (ARC[id] === 'sound' && N()) try { N().setPref('sound', getPref('sound')); } catch (e) { /* ignore */ }
       if (ARC[id] === 'usage' && N()) try { N().refreshStatus(); } catch (e) { /* ignore */ }
+      if (ARC[id] === 'marks' && N()) try { N().reloadOnHome(); } catch (e) { /* ignore */ }
+      return true;
+    }
+    if (id.indexOf('unsplash.') === 0) {
+      if (!N()) { perform('Unsplash', window.FrameDevice.settings); return true; }
+      try {
+        if (id === 'unsplash.key') N().unsplashEdit('key');
+        else if (id === 'unsplash.user') N().unsplashEdit('user');
+        else if (id === 'unsplash.source') N().unsplashSource();
+        else if (id === 'unsplash.fetch') N().unsplashFetch(currentWall());
+        else if (id === 'unsplash.clear') N().unsplashClear(currentWall());
+      } catch (e) { /* ignore */ }
       return true;
     }
     if (id === 'sys.screensaver') { perform('Screensaver', window.FrameDevice.art); return true; }
@@ -187,6 +258,8 @@
 
   window.CleanFramePlatform = {
     primaryApps: primary,
+    homeCap: HOME_CAP,
+    markIds: markIds,
     primaryById: primaryById,
     brandFor: brandFor,
     iconPrefix: 'https://appassets.androidplatform.net/icon/',

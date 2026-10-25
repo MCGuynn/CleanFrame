@@ -36,8 +36,14 @@ final class WebSupport {
     @SuppressLint("SetJavaScriptEnabled")
     static void configure(Context context, WebView web, NativeBridge bridge, Runnable onCrash) {
         Context app = context.getApplicationContext();
+        WebViewAssetLoader.AssetsPathHandler bundled = new WebViewAssetLoader.AssetsPathHandler(app);
         WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
-                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(app))
+                .addPathHandler("/assets/", path -> {
+                    /* Unsplash photos and on-device white marks live in app storage, at the paths CleanFrame expects. */
+                    WebResourceResponse r = Unsplash.serve(app, path);
+                    if (r == null) r = DeviceMarks.serve(app, path);
+                    return r != null ? r : bundled.handle(path);
+                })
                 .addPathHandler("/icon/", path -> iconResponse(app, path))
                 .build();
         WebSettings s = web.getSettings();

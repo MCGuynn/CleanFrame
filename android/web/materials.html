@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>CleanFrame materials</title></head>
+<body>
+<script>
+/* Same recipe as scripts/build-materials.mjs (recipe 1), run on the TV for Unsplash photos.
+   Called by MaterialsWorker; never visible. */
+(function () {
+  'use strict';
+  var W = 1920, H = 1080, P = 96, bridge = window.CleanFrameWorker;
+  if (!bridge) return;
+  var linear = [];
+  for (var v = 0; v < 256; v++) { var x = v / 255; linear.push(x <= .04045 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4)); }
+  function encode(x) { return 255 * (x <= .0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - .055); }
+  function canvas(w, h) { var c = document.createElement('canvas'); c.width = w || W; c.height = h || H; return c; }
+  function jpeg(c, q) { return c.toDataURL('image/jpeg', q).split(',')[1]; }
+  function luma(d, x0, y0, x1, y1) {
+    var sum = 0, n = 0;
+    for (var y = y0; y < y1; y += 6) for (var x = x0; x < x1; x += 6) {
+      var i = (y * W + x) * 4; sum += (.2126 * d[i] + .7152 * d[i + 1] + .0722 * d[i + 2]) / 255; n++;
+    }
+    return sum / n;
+  }
+
+  function make(id) {
+    return new Promise(function (resolve, reject) {
+      var image = new Image();
+      image.onload = function () { try { resolve(render(id, image)); } catch (e) { reject(e); } };
+      image.onerror = reject;
+      image.src = 'assets/wallpapers/' + id + '.jpg';
+    });
+  }
+
+  function render(id, image) {
+    var photo = canvas(), pc = photo.getContext('2d'), scale = Math.max(W / image.width, H / image.height);
+    pc.drawImage(image, (W - image.width * scale) / 2, (H - image.height * scale) / 2, image.width * scale, image.height * scale);
+    var full = pc.getImageData(0, 0, W, H).data;
+
+    /* Light or dark photo, and how bright the top-right controls and bottom-right corner sit. */
+    var whole = luma(full, 0, 0, W, H), tr = luma(full, 1100, 40, 1860, 200), br = luma(full, 1100, 880, 1860, 1060);
+    var look = { tone: whole > .52 ? 'light' : 'dark', tr: tr > .62 ? 'mist' : 'light', br: br > .62 ? 'mist' : 'light' };
+
+    var thumb = canvas(512, 288); thumb.getContext('2d').drawImage(photo, 0, 0, 512, 288);
+    bridge.save(id, '-thumb', jpeg(thumb, .85));
+
+    var padded = canvas(W + 2 * P, H + 2 * P), pad = padded.getContext('2d');
+    for (var yy = -1; yy <= 1; yy++) for (var xx = -1; xx <= 1; xx++) {
+      pad.save(); pad.translate(P + (xx === 1 ? 2 * W : 0), P + (yy === 1 ? 2 * H : 0));
+      pad.scale(xx === 0 ? 1 : -1, yy === 0 ? 1 : -1); pad.drawImage(photo, 0, 0); pad.restore();
+    }
+    var frost = null;
+    [['-field-blur', 28, .92, .82], ['-field-frost', 42, .92, .82], ['-field-clear', 2, 1.06, .86]].forEach(function (spec) {
+      var filtered = canvas(W + 2 * P, H + 2 * P), fc = filtered.getContext('2d');
+      fc.filter = 'blur(' + spec[1] + 'px) saturate(' + spec[2] + ')'; fc.drawImage(padded, 0, 0);
+      var output = canvas(), out = output.getContext('2d'); out.drawImage(filtered, P, P, W, H, 0, 0, W, H);
+      if (spec[0] !== '-field-clear') {
+        var pixels = out.getImageData(0, 0, W, H), data = pixels.data;
+        for (var i = 0; i < data.length; i += 4) {
+          var r = linear[data[i]], g = linear[data[i + 1]], b = linear[data[i + 2]], l = .2126 * r + .7152 * g + .0722 * b;
+          if (l > .82) { var ratio = (.82 + .4 * (l - .82)) / l; data[i] = encode(r * ratio); data[i + 1] = encode(g * ratio); data[i + 2] = encode(b * ratio); }
+          data[i + 3] = 255;
+        }
+        out.putImageData(pixels, 0, 0);
+      }
+      bridge.save(id, spec[0], jpeg(output, spec[3]));
+      if (spec[0] === '-field-frost') frost = output;
+    });
+    var panel = canvas(320, 180); panel.getContext('2d').drawImage(frost, 0, 0, 320, 180);
+    bridge.save(id, '-panel', jpeg(panel, .85));
+
+    /* Soft dock material: darker, low detail, density chosen from the dock band. */
+    var base = canvas(), bc = base.getContext('2d'); bc.drawImage(photo, 0, 0);
+    var scrim = bc.createLinearGradient(0, 560, 0, H);
+    scrim.addColorStop(0, 'rgba(4,10,12,0)'); scrim.addColorStop(.7, 'rgba(4,10,12,.42)'); scrim.addColorStop(1, 'rgba(4,10,12,.52)');
+    bc.fillStyle = scrim; bc.fillRect(0, 560, W, 520);
+    var soft = canvas(), sc = soft.getContext('2d'); sc.filter = 'blur(14px) saturate(1.12)'; sc.drawImage(base, 0, 0); sc.filter = 'none';
+    var px = sc.getImageData(0, 0, W, H), d = px.data, mean = [0, 0, 0], count = 0, k, lumas = [];
+    for (var y = 676; y < 908; y++) for (var x2 = 96; x2 < 1824; x2++) { var j = (y * W + x2) * 4; for (k = 0; k < 3; k++) mean[k] += d[j + k]; count++; }
+    for (k = 0; k < 3; k++) mean[k] /= count;
+    for (var q = 0; q < d.length; q += 4) { for (k = 0; k < 3; k++) d[q + k] = d[q + k] * .65 + mean[k] * .35; d[q + 3] = 255; }
+    for (var y2 = 720; y2 < 908; y2 += 4) for (var x3 = 112; x3 < 1808; x3 += 4) { var m = (y2 * W + x3) * 4; lumas.push(.2126 * d[m] + .7152 * d[m + 1] + .0722 * d[m + 2]); }
+    lumas.sort(function (a, b) { return a - b; });
+    var high = lumas[Math.floor(lumas.length * .95)], tint = Math.max(.28, Math.min(.6, (high - 94) / (high - 8.87)));
+    sc.putImageData(px, 0, 0); sc.fillStyle = 'rgba(4,10,12,' + tint + ')'; sc.fillRect(0, 0, W, H);
+    bridge.save(id, '-study-soft', jpeg(soft, .94));
+    return look;
+  }
+
+  function next() {
+    var ids = [];
+    try { ids = JSON.parse(bridge.pending()); } catch (e) { ids = []; }
+    if (!ids.length) { bridge.idle(); return; }
+    var id = ids[0];
+    make(id).then(function (look) { bridge.finish(id, JSON.stringify(look)); }, function () { bridge.fail(id); })
+      .then(function () { setTimeout(next, 200); });
+  }
+  setTimeout(next, 300);
+}());
+</script>
+</body>
+</html>

@@ -2,6 +2,9 @@
 (function () {
   'use strict';
 
+  /* Optional platform layer (Android/Google TV). Absent on Tizen, so every default below is unchanged there. */
+  var P = window.CleanFramePlatform || {};
+
   /* ---------- Bundled data ---------- */
   var ASSETS = 'assets/', ICONS = ASSETS + 'icons/', WP = ASSETS + 'wallpapers/';
   var CAP = 9, SCRIM_Y = 560;
@@ -12,9 +15,8 @@
   var WALL_VISIBLE = 6, WALL_ROW = 92, WALL_DELAY = 200;
   var KEYS = { 37: 'left', 38: 'up', 39: 'right', 40: 'down', 13: 'ok', 27: 'back', 8: 'back', 10009: 'back', 461: 'back' };
   var FULL = 'Home holds nine apps. Remove one first.', LAST = 'Home needs one app';
+  if (P.homeCap) { CAP = P.homeCap; FULL = 'Home holds ' + CAP + ' apps. Remove one first.'; }
 
-  /* Optional platform layer (Android/Google TV). Absent on Tizen, so every default below is unchanged there. */
-  var P = window.CleanFramePlatform || {};
   var PRIMARY_APPS = P.primaryApps || [
     { id: 'stremio', name: 'Stremio', mark: true, appId: 'IkWsFHtOY9.Stremio' },
     { id: 'netflix', name: 'Netflix', mark: true, appId: 'org.tizen.netflix-app' },
@@ -328,12 +330,13 @@
     }
     return null;
   }
+  function restorableBrand(b) { return ['hbomax', 'spotify', 'tubi'].indexOf(b) >= 0 || !!(P.markIds && P.markIds.indexOf(b) >= 0); }
   function clean(saved) {
     var s = saved && typeof saved === 'object' ? saved : {}, modern = s.look && typeof s.look === 'object' ? s.look : s;
     var legacyList = s.theme === 'list', h = [], recent = [], records = Array.isArray(s.appRecords) ? s.appRecords : [];
     records.slice(0, 256).forEach(function (a) {
       if (!a || !safeId(a.id) || !safeId(a.appId) || typeof a.name !== 'string' || !a.name.trim() || app(a.id)) return;
-      APPS.push({ id: a.id, appId: a.appId, name: a.name.slice(0, 160), brand: ['hbomax', 'spotify', 'tubi'].indexOf(a.brand) >= 0 ? a.brand : '', mark: ['hbomax', 'spotify', 'tubi'].indexOf(a.brand) >= 0, icon: safeIcon(a.icon) });
+      APPS.push({ id: a.id, appId: a.appId, name: a.name.slice(0, 160), brand: restorableBrand(a.brand) ? a.brand : '', mark: restorableBrand(a.brand), icon: safeIcon(a.icon) });
     });
     (Array.isArray(s.home) ? s.home : Array.isArray(s.dock) ? s.dock : []).forEach(function (id) {
       if (!safeId(id) || h.indexOf(id) >= 0 || h.length >= CAP) return;
@@ -928,7 +931,7 @@
       var axis = { background: 'bg', layout: 'layout', typography: 'font', focus: 'focus', rotation: 'mode' }[t.group];
       rows.forEach(function (items) { items.forEach(function (item) {
         if (item.action === t.f.action) exists = true;
-        if (item.axis === axis && item.value === S.c[axis]) applied = item;
+        if (axis && item.axis === axis && item.value === S.c[axis]) applied = item;
       }); });
       if (!exists) detailFocus(t, applied || (rows[1] || rows[0])[0], 0);
       if (t.f.column === undefined) t.f.column = detailLocation(t).column;
@@ -1556,14 +1559,21 @@
       setHTML(el.head, headButtons([['undo', 'Undo', S.undo.length ? '' : 'is-idle', 'undo'], ['done', 'Done', '', 'check']], f.zone === 'head' ? f.h : -1, 'editor'));
       el.head.className = 's-head' + (f.zone === 'head' ? ' is-awake' : '');
       setHTML(el.lh, 'On Home <span class="s-count">' + S.c.home.length + ' of ' + CAP + '</span>');
-      el['break'].className = 'ed-order-break' + (H.length > editorCut() ? ' is-on' : '');
-      el['break'].style.top = (264 + editorCut() * ED_ROW) + 'px';
+      /* More than nine Home apps (Google TV allows more): the Home column scrolls with focus. */
+      var hy = f.zone === 'home' ? editorHomeY(f.i) : null, homeMax = H.length ? Math.max(0, editorHomeY(H.length - 1) + 72 - ED_VIEW) : 0;
+      t.homeTop = t.homeTop || 0;
+      if (hy !== null) { if (hy < t.homeTop) t.homeTop = hy; if (hy + 72 > t.homeTop + ED_VIEW) t.homeTop = hy + 72 - ED_VIEW; }
+      t.homeTop = clamp(t.homeTop, 0, homeMax);
+      var breakY = editorCut() * ED_ROW - t.homeTop;
+      el['break'].className = 'ed-order-break' + (H.length > editorCut() && breakY >= 0 && breakY + 24 <= ED_VIEW ? ' is-on' : '');
+      el['break'].style.top = (264 + breakY) + 'px';
 
       keyed(el.home, H.map(function (id) { return { key: id, id: id }; }), function (row, it, i) {
         var a = app(it.id), here = f.zone === 'home' && i === f.i, lifted = !!t.lifted && i === f.i;
         setContent(row, it.id, '<div class="er-name" role="button"><span class="panel-content"><span class="er-num"></span>' + smallMark(a) + '<span class="er-text">' + esc(a.name) + '</span><span class="er-move">' + icon('updown') + '</span></span></div><div class="er-rm" role="button"><span></span></div>');
         row.className = 'er' + (here ? ' is-active' : '') + (lifted ? ' is-lifted' : '');
-        row.style.transform = 'translate3d(' + (lifted ? 16 : 0) + 'px,' + editorHomeY(i) + 'px,0)';
+        row.style.transform = 'translate3d(' + (lifted ? 16 : 0) + 'px,' + (editorHomeY(i) - t.homeTop) + 'px,0)';
+        row.style.visibility = editorHomeY(i) >= t.homeTop && editorHomeY(i) + 72 <= t.homeTop + ED_VIEW ? '' : 'hidden';
         row.querySelector('.er-num').textContent = String(i + 1);
         row.firstChild.className = 'er-name' + (here && (f.part === 'name' || lifted) ? ' is-focus' : '');
         row.lastChild.className = 'er-rm' + (here && f.part === 'remove' && !lifted ? ' is-focus' : '') + (H.length <= 1 ? ' is-limit' : '');
@@ -1572,7 +1582,7 @@
         attrs(row.lastChild, 'remove', i, 'editor.remove.' + it.id);
       });
       el.origin.className = 'ed-origin' + (t.lifted && t.lifted.from !== f.i ? ' is-on' : '');
-      if (t.lifted) el.origin.style.transform = 'translate3d(0,' + (264 + editorHomeY(t.lifted.from) + 16) + 'px,0)';
+      if (t.lifted) el.origin.style.transform = 'translate3d(0,' + (264 + editorHomeY(t.lifted.from) - t.homeTop + 16) + 'px,0)';
 
       if (O.recent.length) { entries.push({ key: 'sep-recent', sep: 'Recently removed', y: y }); y += ED_SEP; }
       O.recent.forEach(function (id) { entries.push({ key: id, id: id, y: y }); ys.push(y); y += ED_ROW; });

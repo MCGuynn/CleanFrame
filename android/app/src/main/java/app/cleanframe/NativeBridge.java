@@ -31,14 +31,25 @@ final class NativeBridge {
             "com.google.android.leanbacklauncher"
     };
     private static final Set<String> ALLOWED_PREFS = new HashSet<>(java.util.Arrays.asList(
-            "clock", "date", "network", "usage", "back", "sound"));
+            "clock", "date", "network", "usage", "back", "sound", "marks"));
+
+    /** What the bridge needs from the visible activity (text entry with the TV keyboard). */
+    interface Host {
+        void prompt(String title, String hint, String current, boolean secret, java.util.function.Consumer<String> done);
+        /** Reload the page on the next Home press (settings that change what the page loads). */
+        void reloadOnHome();
+    }
 
     private final Context context;
     private final StatusMonitor status;
+    private final Host host;
 
-    NativeBridge(Context context, StatusMonitor status) {
+    NativeBridge(Context context, StatusMonitor status) { this(context, status, null); }
+
+    NativeBridge(Context context, StatusMonitor status, Host host) {
         this.context = context.getApplicationContext();
         this.status = status;
+        this.host = host;
     }
 
     /* ---------- Apps ---------- */
@@ -136,6 +147,35 @@ final class NativeBridge {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         if (start(dream)) return "";
         return start(new Intent(Settings.ACTION_DREAM_SETTINGS)) ? "" : "This TV can’t start the screensaver directly.";
+    }
+
+    /* ---------- White marks made from installed apps' icons ---------- */
+
+    @JavascriptInterface
+    public void reloadOnHome() { if (host != null) host.reloadOnHome(); }
+
+    @JavascriptInterface
+    public String deviceMarks() { return DeviceMarks.metricsJson(context); }
+
+    /* ---------- Unsplash ---------- */
+
+    @JavascriptInterface public String unsplashInfo() { return Unsplash.get(context).infoJson(); }
+    @JavascriptInterface public String unsplashPhotos() { return Unsplash.get(context).readyPhotos().toString(); }
+    @JavascriptInterface public void unsplashSource() { Unsplash.get(context).nextSource(); }
+    @JavascriptInterface public void unsplashFetch(String keepId) { Unsplash.get(context).fetch(String.valueOf(keepId)); }
+    @JavascriptInterface public void unsplashClear(String keepId) { Unsplash.get(context).clear(String.valueOf(keepId)); }
+
+    /** Opens the TV keyboard for the access key ("key") or Unsplash username ("user"). */
+    @JavascriptInterface
+    public String unsplashEdit(String field) {
+        if (host == null) return "Text entry isn't available here.";
+        Unsplash u = Unsplash.get(context);
+        if ("key".equals(field)) {
+            host.prompt("Unsplash access key", "Paste or type the Access Key from unsplash.com/oauth/applications", "", true, u::setKey);
+        } else if ("user".equals(field)) {
+            host.prompt("Unsplash username", "Your username, to use your collections (optional)", u.username(), false, u::setUsername);
+        } else return "Unknown field.";
+        return "";
     }
 
     /* ---------- Preferences and status ---------- */

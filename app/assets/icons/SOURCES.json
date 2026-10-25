@@ -12,5 +12,7 @@
   "apps": "CleanFrame original utility outline, 24px grid / 1.6px stroke",
   "settings": "CleanFrame original utility outline, 24px grid / 1.6px stroke",
   "home": "CleanFrame original utility outline, 24px grid / 1.6px stroke",
-  "plex": "https://raw.githubusercontent.com/simple-icons/simple-icons/4d29a35c954699b389a834aacc97dd6e7e74143c/icons/plex.svg"
+  "plex": "https://raw.githubusercontent.com/simple-icons/simple-icons/4d29a35c954699b389a834aacc97dd6e7e74143c/icons/plex.svg",
+  "crunchyroll": "https://raw.githubusercontent.com/simple-icons/simple-icons/4d29a35c954699b389a834aacc97dd6e7e74143c/icons/crunchyroll.svg",
+  "fubo": "https://raw.githubusercontent.com/simple-icons/simple-icons/4d29a35c954699b389a834aacc97dd6e7e74143c/icons/fubo.svg"
 }

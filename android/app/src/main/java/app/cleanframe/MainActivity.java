@@ -10,9 +10,17 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.text.InputType;
+import android.app.AlertDialog;
 
 /** CleanFrame as the Google TV Home app: one full-screen WebView plus remote handling. */
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements NativeBridge.Host {
+    private FrameLayout root;
+    private MaterialsWorker materials;
+    /* Set when new Unsplash photos are ready; the page reloads on the next Home press. */
+    private boolean reloadOnHome;
     private WebView web;
     private StatusMonitor status;
     private NativeBridge bridge;
@@ -28,14 +36,20 @@ public class MainActivity extends Activity {
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
         status = new StatusMonitor(this, () -> js("window.CleanFrameAndroid && CleanFrameAndroid.refresh()"));
-        bridge = new NativeBridge(this, status);
+        bridge = new NativeBridge(this, status, this);
+        root = new FrameLayout(this);
+        root.setBackgroundColor(android.graphics.Color.BLACK);
+        setContentView(root);
+        materials = new MaterialsWorker(this, root, () -> { reloadOnHome = true; refreshUi(); });
+        Unsplash.get(this).setListeners(this::refreshUi, () -> materials.kick());
         createWebView();
         status.start();
     }
 
     private void createWebView() {
         if (web != null) {
-            ((ViewGroup) web.getParent()).removeView(web);
+            ViewGroup p = (ViewGroup) web.getParent();
+            if (p != null) p.removeView(web);
             web.destroy();
         }
         pageReady = false;
@@ -44,7 +58,7 @@ public class MainActivity extends Activity {
         web.setWebChromeClient(new android.webkit.WebChromeClient() {
             @Override public void onProgressChanged(WebView v, int p) { if (p == 100) pageReady = true; }
         });
-        setContentView(web);
+        root.addView(web, 0, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         web.loadUrl(WebSupport.HOME_URL);
         web.requestFocus();
     }
@@ -54,7 +68,8 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         if (intent != null && intent.hasCategory(Intent.CATEGORY_HOME)) {
-            js("window.CleanFrameAndroid && CleanFrameAndroid.onHome()");
+            if (reloadOnHome && web != null) { reloadOnHome = false; pageReady = false; web.reload(); }
+            else js("window.CleanFrameAndroid && CleanFrameAndroid.onHome()");
         }
     }
 
@@ -87,16 +102,47 @@ public class MainActivity extends Activity {
         if (am != null) am.playSoundEffect(effect);
     }
 
+    @Override public void reloadOnHome() { runOnUiThread(() -> reloadOnHome = true); }
+
+    private void refreshUi() { js("window.CleanFrameAndroid && CleanFrameAndroid.refresh()"); }
+
+    /** TV keyboard entry for the Unsplash key and username. */
+    @Override
+    public void prompt(String title, String hint, String current, boolean secret, java.util.function.Consumer<String> done) {
+        runOnUiThread(() -> {
+            EditText input = new EditText(this);
+            input.setSingleLine(true);
+            input.setHint(hint);
+            input.setText(current);
+            input.setInputType(InputType.TYPE_CLASS_TEXT | (secret ? InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD : 0));
+            int pad = (int) (24 * getResources().getDisplayMetrics().density);
+            FrameLayout box = new FrameLayout(this);
+            box.setPadding(pad, pad / 2, pad, 0);
+            box.addView(input);
+            AlertDialog d = new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle(title)
+                    .setView(box)
+                    .setPositiveButton("Save", (dlg, which) -> done.accept(input.getText().toString()))
+                    .setNegativeButton("Cancel", null)
+                    .create();
+            d.setOnDismissListener(x -> { if (web != null) web.requestFocus(); });
+            d.show();
+            input.requestFocus();
+        });
+    }
+
     private void js(String script) {
         runOnUiThread(() -> { if (web != null) web.evaluateJavascript(script, null); });
     }
 
-    @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); web.requestFocus(); } status.refreshUsage(); }
+    @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); web.requestFocus(); } status.refreshUsage(); materials.kick(); }
     @Override protected void onPause() { if (web != null) web.onPause(); super.onPause(); }
 
     @Override
     protected void onDestroy() {
         status.stop();
+        materials.stop();
+        Unsplash.get(this).setListeners(null, null);
         if (web != null) { web.destroy(); web = null; }
         super.onDestroy();
     }

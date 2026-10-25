@@ -27,7 +27,18 @@ All under **Settings › Google TV**. Each option changes with OK.
 - **Shortcuts** — Google TV Home, TV settings, Network and internet, Start screensaver, Screensaver settings.
 - **Screensaver** — "CleanFrame Clock": your wallpaper, dimmed, with a clock that drifts to protect the panel.
 
-The top bar's Art Mode button becomes **Screensaver**. Known apps (YouTube, Netflix, Disney+, Prime Video, Apple TV, HBO Max, Tubi, Spotify, Stremio) use CleanFrame's monochrome marks; everything else in All apps uses its own icon.
+### Home row, white icons and Unsplash
+
+- **Up to 24 apps on Home**, still one row (Dock) or one column (List) that scrolls. Add, remove and reorder them in **Settings › Apps on Home** (OK on an app lifts it, Up/Down moves it, OK places it).
+- **White app icons, Arc style.** Bundled marks for YouTube, Netflix, Disney+, Prime Video, Apple TV, HBO Max, Tubi, Spotify, Stremio, Plex, Crunchyroll and fubo. Every other app (Hulu, ESPN, Peacock, Bubo…) gets a white mark made on the TV from the logo layer of its own icon. Icons that are a solid tile with no logo layer keep their original icon. Switch with Settings › Google TV › App icons.
+- **Unsplash wallpapers** with your own developer Access Key: Settings › Google TV › Unsplash wallpapers.
+  1. Create an app at <https://unsplash.com/oauth/applications> and copy its **Access Key**.
+  2. *Access key* → OK opens the TV keyboard (or type it with the Google TV remote app on your phone).
+  3. Optional: *Your username* to use your own collections; *Photos from* cycles through each collection, all of them, or Unsplash landscapes.
+  4. *Get new photos* downloads 10 at 1920×1080, then the TV renders CleanFrame's glass and blur versions in the background (a few seconds each). Press Home when it says they're ready; they appear in Settings › Background › Wallpaper and in timed Rotation.
+  The photographer's name shows under the clock while their photo is on screen, as Unsplash asks. Up to 40 photos are kept; the one on screen is never removed. Demo keys allow 50 requests an hour, plenty for this.
+
+The top bar's Art Mode button becomes **Screensaver**.
 
 ## Build the APK
 
@@ -76,7 +87,8 @@ Order matters: install and open CleanFrame **before** disabling the stock launch
 
 - Input switching, live TV and Google's recommendations rows come from the stock launcher. CleanFrame doesn't replace them; keep the TCL's Inputs button / Live TV app for HDMI.
 - "Start screensaver" uses the system's dream starter (`Somnambulator`). If TCL hides it, CleanFrame opens screensaver settings instead.
-- The UI is offline: no INTERNET permission, no analytics.
+- The only network use is Unsplash, and only after you add a key. No analytics. The key stays in the app's private storage; the web UI never sees it.
+- Unsplash photos are saved on the TV so CleanFrame can pre-render its glass. That's fine for your own TV; an app published for others would need to follow Unsplash's hotlinking guideline.
 - Arc Launcher is GPL‑3.0; nothing here copies its code — the options are reimplemented. CleanFrame is MIT; keep `../LICENSE` and `../THIRD_PARTY_NOTICES.md` with any APK you share (brand marks and photos have their own terms).
 
 ## Check before shipping a change
