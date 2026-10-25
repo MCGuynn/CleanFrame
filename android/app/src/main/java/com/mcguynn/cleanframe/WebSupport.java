@@ -48,6 +48,10 @@ final class WebSupport {
         s.setMediaPlaybackRequiresUserGesture(true);
         s.setTextZoom(100);
         s.setSupportZoom(false);
+        s.setBuiltInZoomControls(false);
+        /* Honour the page's width=1920 viewport and scale it to fill the screen. */
+        s.setUseWideViewPort(true);
+        s.setLoadWithOverviewMode(true);
         web.setBackgroundColor(Color.BLACK);
         web.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
         web.setVerticalScrollBarEnabled(false);

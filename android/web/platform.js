@@ -219,6 +219,10 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', followFocus); else followFocus();
 
+  /* The WebView can settle its size after the first paint; re-run CleanFrame's fit() as it does. */
+  function refit() { try { window.dispatchEvent(new Event('resize')); } catch (e) { /* ignore */ } }
+  window.addEventListener('load', function () { refit(); setTimeout(refit, 300); setTimeout(refit, 1500); });
+
   /* ---------- Hooks the Android activity calls ---------- */
   window.CleanFrameAndroid = {
     /* Remote Home pressed while CleanFrame is already in front. */
