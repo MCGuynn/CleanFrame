@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- "CleanFrame Clock": a CleanFrame wallpaper, dimmed, with a clock that drifts a little
-     each minute so no part of the panel holds the same image. -->
+<!-- "CleanFrame Clock": a CleanFrame or Unsplash photo, dimmed, with a clock that drifts a
+     little each minute so no part of the panel holds the same image. -->
 <component name="ScreensaverScene" extends="Scene">
   <script type="text/brightscript" uri="pkg:/components/Common.brs" />
   <script type="text/brightscript" uri="pkg:/components/ScreensaverScene.brs" />
@@ -16,6 +16,9 @@
         <Font role="font" uri="pkg:/fonts/Geist-Medium.ttf" size="40" />
       </Label>
     </Group>
+    <Label id="credit" translation="[72,1012]" width="1200" color="0xFFFFFF90">
+      <Font role="font" uri="pkg:/fonts/Geist-Medium.ttf" size="24" />
+    </Label>
     <Animation id="fadeIn" duration="2" easeFunction="linear">
       <FloatFieldInterpolator key="[0,1]" keyValue="[0,1]" fieldToInterp="photo.opacity" />
     </Animation>

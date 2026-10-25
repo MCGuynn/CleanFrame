@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Unsplash for CleanFrame Clock. Uses your own developer Access Key (saved in this
+     package's Roku registry). One run per command:
+       { kind: "photos" }           20 landscape photos from the chosen source, cached
+       { kind: "collections" }      your collections (needs your username)
+       { kind: "ping", url: "..." } Unsplash's download tracking for a shown photo -->
+<component name="UnsplashTask" extends="Task">
+  <interface>
+    <field id="command" type="assocarray" />
+    <field id="result" type="assocarray" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/Common.brs" />
+  <script type="text/brightscript"><![CDATA[
+sub init()
+    m.top.functionName = "work"
+end sub
+
+sub work()
+    cmd = m.top.command
+    key = cfGet("unsplash_key", "")
+    if cmd = invalid or cmd.kind = invalid then return
+    if key = "" then
+        m.top.result = { kind: cmd.kind, ok: false, error: "Add your Unsplash access key first." }
+        return
+    end if
+    if cmd.kind = "photos" then
+        photos(key)
+    else if cmd.kind = "collections" then
+        collections(key)
+    else if cmd.kind = "ping" and cmd.url <> invalid then
+        fetch(cmd.url, key)
+    end if
+end sub
+
+function fetch(url as String, key as String) as Object
+    ut = CreateObject("roUrlTransfer")
+    p = CreateObject("roMessagePort")
+    ut.SetMessagePort(p)
+    ut.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    ut.InitClientCertificates()
+    ut.AddHeader("Authorization", "Client-ID " + key)
+    ut.AddHeader("Accept-Version", "v1")
+    ut.RetainBodyOnError(true)
+    ut.SetUrl(url)
+    if not ut.AsyncGetToString() then return { code: -1, body: "" }
+    msg = wait(15000, p)
+    if type(msg) = "roUrlEvent" then return { code: msg.GetResponseCode(), body: msg.GetString() }
+    ut.AsyncCancel()
+    return { code: 0, body: "" }
+end function
+
+function problem(code as Integer) as String
+    if code = 401 then return "Unsplash didn't accept the access key."
+    if code = 403 then return "Unsplash's hourly limit is used up. Try again later."
+    if code = 404 then return "Unsplash couldn't find that user or collection."
+    if code <= 0 then return "Couldn't reach Unsplash. Is the TV online?"
+    return "Unsplash returned an error (" + code.ToStr() + ")."
+end function
+
+sub photos(key as String)
+    src = cfGet("source", "cleanframe")
+    url = "https://api.unsplash.com/photos/random?count=20&orientation=landscape&content_filter=high"
+    if src = "all" then
+        ids = []
+        cols = ParseJson(cfGet("unsplash_cols", "[]"))
+        if cols <> invalid then
+            for each c in cols
+                ids.Push(c.id)
+            end for
+        end if
+        if ids.Count() > 0 then url = url + "&collections=" + ids.Join(",") else url = url + "&query=landscape"
+    else if src = "landscape" or src = "cleanframe" then
+        url = url + "&query=landscape"
+    else
+        url = url + "&collections=" + src
+    end if
+    r = fetch(url, key)
+    if r.code <> 200 then
+        m.top.result = { kind: "photos", ok: false, error: problem(r.code) }
+        return
+    end if
+    list = []
+    data = ParseJson(r.body)
+    if data <> invalid then
+        for each p in data
+            if p.urls <> invalid and p.urls.raw <> invalid then
+                author = "Unsplash"
+                if p.user <> invalid and p.user.name <> invalid then author = p.user.name
+                ping = ""
+                if p.links <> invalid and p.links.download_location <> invalid then ping = p.links.download_location
+                list.Push({ url: p.urls.raw + "&w=1920&h=1080&fit=crop&crop=entropy&fm=jpg&q=80", author: author, ping: ping })
+            end if
+        end for
+    end if
+    if list.Count() > 0 then cfSet("unsplash_cache", FormatJson(list))
+    m.top.result = { kind: "photos", ok: list.Count() > 0, count: list.Count(), error: "No photos came back." }
+end sub
+
+sub collections(key as String)
+    user = cfGet("unsplash_user", "")
+    if user = "" then
+        m.top.result = { kind: "collections", ok: false, error: "Add your Unsplash username to use your collections." }
+        return
+    end if
+    r = fetch("https://api.unsplash.com/users/" + user.EncodeUriComponent() + "/collections?per_page=30", key)
+    if r.code <> 200 then
+        m.top.result = { kind: "collections", ok: false, error: problem(r.code) }
+        return
+    end if
+    cols = []
+    data = ParseJson(r.body)
+    if data <> invalid then
+        for each c in data
+            total = 0
+            if c.total_photos <> invalid then total = c.total_photos
+            title = "Collection"
+            if c.title <> invalid then title = c.title
+            if total > 0 and c.id <> invalid then cols.Push({ id: c.id.ToStr(), title: title, total: total })
+        end for
+    end if
+    cfSet("unsplash_cols", FormatJson(cols))
+    m.top.result = { kind: "collections", ok: true, count: cols.Count(), error: "" }
+end sub
+  ]]></script>
+</component>

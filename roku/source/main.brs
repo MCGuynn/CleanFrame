@@ -1,10 +1,18 @@
-' CleanFrame Clock for Roku: a screensaver only. Roku lists screensaver packages under
-' Settings > Theme > Screensavers; a screensaver package has RunScreenSaver and no Main.
+' CleanFrame Clock for Roku: a screensaver package. Roku lists it under
+' Settings > Theme > Screensavers; "Custom Settings" there opens RunScreenSaverSettings.
 sub RunScreenSaver()
+    showScene("ScreensaverScene")
+end sub
+
+sub RunScreenSaverSettings()
+    showScene("SettingsScene")
+end sub
+
+sub showScene(name as String)
     screen = CreateObject("roSGScreen")
     port = CreateObject("roMessagePort")
     screen.setMessagePort(port)
-    screen.CreateScene("ScreensaverScene")
+    screen.CreateScene(name)
     screen.show()
     while true
         msg = wait(0, port)
