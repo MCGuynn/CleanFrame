@@ -1,7 +1,7 @@
-title=CleanFrame
-subtitle=A quieter home screen
+title=CleanFrame Clock
+subtitle=CleanFrame photos with a quiet clock
 major_version=0
-minor_version=1
+minor_version=2
 build_version=1
 mm_icon_focus_fhd=pkg:/images/icon_focus_fhd.jpg
 mm_icon_focus_hd=pkg:/images/icon_focus_hd.jpg

@@ -1,19 +1,10 @@
-' CleanFrame for Roku. One package, two entry points:
-'   Main            - the Home-style screen you open from Roku Home
-'   RunScreenSaver  - "CleanFrame Clock", chosen in Settings > Theme > Screensavers
-sub Main(args as Dynamic)
-    showScene("HomeScene")
-end sub
-
+' CleanFrame Clock for Roku: a screensaver only. Roku lists screensaver packages under
+' Settings > Theme > Screensavers; a screensaver package has RunScreenSaver and no Main.
 sub RunScreenSaver()
-    showScene("ScreensaverScene")
-end sub
-
-sub showScene(name as String)
     screen = CreateObject("roSGScreen")
     port = CreateObject("roMessagePort")
     screen.setMessagePort(port)
-    screen.CreateScene(name)
+    screen.CreateScene("ScreensaverScene")
     screen.show()
     while true
         msg = wait(0, port)

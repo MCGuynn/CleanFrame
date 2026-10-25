@@ -17,7 +17,7 @@ jobs:
       - name: Package
         working-directory: roku
         run: |
-          zip -r "$GITHUB_WORKSPACE/CleanFrame-Roku.zip" manifest source components images fonts -x '*.DS_Store'
+          zip -r "$GITHUB_WORKSPACE/CleanFrame-Roku.zip" manifest source components images/walls images/splash_fhd.jpg images/icon_focus_fhd.jpg images/icon_focus_hd.jpg fonts -x '*.DS_Store'
           ls -l "$GITHUB_WORKSPACE/CleanFrame-Roku.zip"
       - uses: actions/upload-artifact@v4
         with:

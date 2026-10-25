@@ -73,7 +73,7 @@ The detailed [device record](docs/tv-status.md) separates observed results from 
 
 ## Roku TV
 
-[`roku/`](roku/README.md) is a native Roku app with the same look: a CleanFrame Home you open from Roku Home (your channels and inputs in one frosted row) and the CleanFrame Clock screensaver. Roku keeps its own Home button; sideload the zip in Developer Mode.
+[`roku/`](roku/README.md) is **CleanFrame Clock**, a native Roku screensaver with the same photos and type. Roku doesn't let apps replace or launch from its Home, so on Roku it's a screensaver; sideload the zip in Developer Mode.
 
 ## Develop and check
 
