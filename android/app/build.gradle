@@ -1,0 +1,63 @@
+plugins { id 'com.android.application' }
+
+/* The UI is CleanFrame's own app/ folder, copied in at build time so upstream
+   changes merge cleanly. android/web/ replaces device.js and adds the Google TV layer. */
+def webOut = layout.buildDirectory.dir('generated/cleanframe-web')
+def syncWeb = tasks.register('syncCleanFrameWeb', Sync) {
+    into(webOut.map { it.dir('www') })
+    from(rootProject.file('../app')) {
+        exclude 'config.xml', 'device.js', 'assets/private-fonts/**'
+    }
+    from(rootProject.file('web'))
+    filesMatching('index.html') {
+        filter { String line ->
+            line.replace('<script src="device.js"></script>', '<script src="device.js"></script>\n<script src="platform.js"></script>')
+                .replace('<link rel="stylesheet" href="style.css">', '<link rel="stylesheet" href="style.css">\n<link rel="stylesheet" href="android.css">')
+                .replace('<html lang="en-AU">', '<html lang="en">')
+        }
+    }
+}
+
+android {
+    namespace 'com.mcguynn.cleanframe'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.mcguynn.cleanframe'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '0.6.1-tv1'
+    }
+
+    signingConfigs {
+        release {
+            /* Set by the GitHub workflow (or ~/.gradle/gradle.properties) so updates install over each other. */
+            def ks = System.getenv('CF_KEYSTORE') ?: project.findProperty('CF_KEYSTORE')
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv('CF_KEYSTORE_PASSWORD') ?: project.findProperty('CF_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('CF_KEY_ALIAS') ?: project.findProperty('CF_KEY_ALIAS')
+                keyPassword System.getenv('CF_KEY_PASSWORD') ?: project.findProperty('CF_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig (signingConfigs.release.storeFile ? signingConfigs.release : signingConfigs.debug)
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets.main.assets.srcDirs += webOut.get().asFile
+    androidResources { noCompress += ['jpg', 'woff2', 'ttf'] }
+}
+
+tasks.named('preBuild') { dependsOn syncWeb }
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}

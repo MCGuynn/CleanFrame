@@ -67,6 +67,10 @@ The signing and TV scripts are specific to my setup. Your agent will need to ada
 
 The detailed [device record](docs/tv-status.md) separates observed results from SDK responses. Native Home/startup uses undocumented, guarded helpers; it is optional and can fail after firmware changes. Keep a recovery baseline before attempting that work. The app can be opened manually without it.
 
+## Google TV / Android TV
+
+[`android/`](android/README.md) wraps the same UI as an Android TV home app (tested target: TCL Google TV), with Arc Launcher-style options: clock format, status line, Back button action, navigation sounds and a clock screensaver. GitHub Actions builds the APK; install it with TV Box Tools.
+
 ## Develop and check
 
 ```sh

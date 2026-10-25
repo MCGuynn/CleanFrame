@@ -1,0 +1,9 @@
+/* Google TV additions: status line under the clock and the full-screen clock. */
+.cap-status{font-size:26px;line-height:34px;opacity:.82}
+.cf-fullclock{position:fixed;inset:0;z-index:1000;background:#000;display:flex;align-items:center;justify-content:center;cursor:none}
+.cf-fullclock-inner{text-align:center;color:rgba(255,255,255,.86);font-family:Manrope,Arial,sans-serif;transition:transform 1.2s ease}
+.cf-fullclock-time{font-size:22vh;line-height:1;font-weight:300;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.cf-fullclock-date{margin-top:3vh;font-size:4vh;font-weight:500;opacity:.6}
+/* Settings detail pages scroll when longer than the screen (only the Google TV page is). */
+.appearance-rows{max-height:700px;overflow:hidden;position:relative}
+.appearance-rows{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16px,#000 calc(100% - 32px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 16px,#000 calc(100% - 32px),transparent 100%)}
