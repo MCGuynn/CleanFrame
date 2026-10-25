@@ -44,6 +44,7 @@
     { id: 'tubi', name: 'Tubi', pkgs: ['com.tubitv'] },
     { id: 'spotify', name: 'Spotify', pkgs: ['com.spotify.tv.android'] },
     { id: 'stremio', name: 'Stremio', pkgs: ['com.stremio.one'] },
+    { id: 'plex', name: 'Plex', pkgs: ['com.plexapp.android'] },
     { id: 'abciview', name: 'ABC iview', pkgs: ['au.net.abc.iview'] },
     { id: 'sbs', name: 'SBS On Demand', pkgs: ['com.sbs.ondemand.tv'] }
   ];
