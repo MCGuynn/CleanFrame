@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CleanFrame's Home look on Roku: photo, clock and date, and one frosted row of your
+     channels and inputs. Roku Home stays Roku's own; this is an app you open from it. -->
+<component name="HomeScene" extends="Scene">
+  <script type="text/brightscript" uri="pkg:/components/Common.brs" />
+  <script type="text/brightscript" uri="pkg:/components/HomeScene.brs" />
+  <children>
+    <Rectangle id="ground" width="1920" height="1080" color="0x0D0D0DFF" />
+    <Poster id="photo" width="1920" height="1080" loadDisplayMode="scaleToZoom" />
+    <Poster id="scrim" uri="pkg:/images/scrim-top.png" width="1920" height="420" />
+    <Label id="clock" translation="[140,64]" color="0xF6F1E7FF">
+      <Font role="font" uri="pkg:/fonts/Geist-Medium.ttf" size="52" />
+    </Label>
+    <Label id="date" translation="[142,136]" color="0xF6F1E7E0">
+      <Font role="font" uri="pkg:/fonts/Geist-Medium.ttf" size="28" />
+    </Label>
+    <Label id="hint" translation="[1080,82]" width="700" horizAlign="right" color="0xF6F1E7B0">
+      <Font role="font" uri="pkg:/fonts/Geist-Medium.ttf" size="24" />
+    </Label>
+    <Poster id="glass" translation="[96,676]" width="1728" height="232" />
+    <Group id="clip" clippingRect="[96,676,1728,232]">
+      <Group id="track" translation="[112,692]" />
+    </Group>
+    <Label id="status" translation="[96,940]" width="1728" horizAlign="center" wrap="true" maxLines="2" color="0xF6F1E7D0">
+      <Font role="font" uri="pkg:/fonts/Geist-Medium.ttf" size="26" />
+    </Label>
+    <Timer id="tick" repeat="true" duration="1" />
+  </children>
+</component>

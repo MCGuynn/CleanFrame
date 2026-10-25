@@ -71,6 +71,10 @@ The detailed [device record](docs/tv-status.md) separates observed results from 
 
 [`android/`](android/README.md) wraps the same UI as an Android TV home app (tested target: TCL Google TV), with Arc Launcher-style options: clock format, status line, Back button action, navigation sounds and a clock screensaver. GitHub Actions builds the APK; install it with TV Box Tools.
 
+## Roku TV
+
+[`roku/`](roku/README.md) is a native Roku app with the same look: a CleanFrame Home you open from Roku Home (your channels and inputs in one frosted row) and the CleanFrame Clock screensaver. Roku keeps its own Home button; sideload the zip in Developer Mode.
+
 ## Develop and check
 
 ```sh
