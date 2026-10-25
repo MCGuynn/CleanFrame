@@ -1,4 +1,4 @@
-package com.mcguynn.cleanframe;
+package app.cleanframe;
 
 import android.app.AppOpsManager;
 import android.app.usage.NetworkStats;

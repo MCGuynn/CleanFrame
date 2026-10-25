@@ -33,7 +33,7 @@ The top bar's Art Mode button becomes **Screensaver**. Known apps (YouTube, Netf
 
 Pick one:
 
-**GitHub (no tools needed).** Push this repo to your fork. The *Google TV APK* workflow builds `CleanFrame-GoogleTV.apk` and attaches it (with its SHA‑256) to the run under *Artifacts*. You can also run it by hand from the Actions tab.
+**GitHub (no tools needed).** Push this repo to your fork. The *Google TV APK* workflow builds `CleanFrame.apk` and attaches it (with its SHA‑256) to the run under *Artifacts*. You can also run it by hand from the Actions tab.
 
 **Android Studio on your Mac.** Open the `android/` folder, let Gradle sync, then *Build › Build App Bundle(s) / APK(s) › Build APK(s)*. Or from a terminal: `cd android && ./gradlew assembleRelease`. Output: `android/app/build/outputs/apk/release/app-release.apk`.
 
@@ -51,7 +51,7 @@ and add the repo secrets `CF_KEYSTORE_B64`, `CF_KEYSTORE_PASSWORD`, `CF_KEY_ALIA
 1. **Connect.** On the TV turn on Developer options and USB/Wireless debugging. In TV Box Tools run *discover*, then *pair* (Android 11+) and *connect*, and allow debugging on the TV. Run *check* and note the current HOME app — that's your recovery value (normally `com.google.android.apps.tv.launcherx`).
 2. **Install.** Give TV Box Tools the APK and its SHA‑256 (from the `.sha256` file) for *install*.
 3. **Try it first.** Open **CleanFrame** from the Google TV app list. Arrow around, open an app, press Home to come back. Don't make it Home until this works.
-4. **Make it Home.** Use *provision* to set `com.mcguynn.cleanframe/.MainActivity` as the HOME app (it switches the stock launcher off with `pm disable-user`, keeping its data). Google TV also has `com.google.android.tungsten.setupwraith`, which can switch the stock launcher back on; if the Home button still lands on Google TV after a reboot, that package needs disabling too.
+4. **Make it Home.** Use *provision* to set `app.cleanframe/.MainActivity` as the HOME app (it switches the stock launcher off with `pm disable-user`, keeping its data). Google TV also has `com.google.android.tungsten.setupwraith`, which can switch the stock launcher back on; if the Home button still lands on Google TV after a reboot, that package needs disabling too.
 5. **Test.** Run *test* (checks who answers HOME and reboots). After the reboot the TV should open CleanFrame.
 
 Order matters: install and open CleanFrame **before** disabling the stock launcher. With no working home app, the TV boots to a blank screen.
@@ -69,7 +69,7 @@ Order matters: install and open CleanFrame **before** disabling the stock launch
 ### Optional permissions
 
 - **Wi‑Fi usage** needs usage access. Settings › Google TV › Usage access opens the screen where the TV has one; Google TV often hides it, so grant it once with adb:
-  `adb shell appops set com.mcguynn.cleanframe GET_USAGE_STATS allow`
+  `adb shell appops set app.cleanframe GET_USAGE_STATS allow`
 - **Screensaver:** choose *CleanFrame Clock* under Settings › System › Ambient mode › Screensaver (Screensaver settings in CleanFrame opens it where the TV allows).
 
 ## Things to know

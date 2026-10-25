@@ -1,4 +1,4 @@
-package com.mcguynn.cleanframe;
+package app.cleanframe;
 
 import android.service.dreams.DreamService;
 import android.webkit.WebView;

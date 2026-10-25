@@ -39,12 +39,12 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/CleanFrame-GoogleTV.apk"
-          sha256sum "$GITHUB_WORKSPACE/CleanFrame-GoogleTV.apk" | tee "$GITHUB_WORKSPACE/CleanFrame-GoogleTV.apk.sha256"
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/CleanFrame.apk"
+          sha256sum "$GITHUB_WORKSPACE/CleanFrame.apk" | tee "$GITHUB_WORKSPACE/CleanFrame.apk.sha256"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: CleanFrame-GoogleTV
+          name: CleanFrame
           path: |
-            CleanFrame-GoogleTV.apk
-            CleanFrame-GoogleTV.apk.sha256
+            CleanFrame.apk
+            CleanFrame.apk.sha256

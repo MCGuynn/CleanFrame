@@ -22,11 +22,11 @@ def syncWeb = tasks.register('syncCleanFrameWeb', Sync) {
 }
 
 android {
-    namespace 'com.mcguynn.cleanframe'
+    namespace 'app.cleanframe'
     compileSdk 34
 
     defaultConfig {
-        applicationId 'com.mcguynn.cleanframe'
+        applicationId 'app.cleanframe'
         minSdk 26
         targetSdk 34
         versionCode 2

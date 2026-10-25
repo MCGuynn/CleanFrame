@@ -1,4 +1,4 @@
-package com.mcguynn.cleanframe;
+package app.cleanframe;
 
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;

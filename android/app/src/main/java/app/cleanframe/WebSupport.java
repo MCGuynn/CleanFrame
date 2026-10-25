@@ -1,4 +1,4 @@
-package com.mcguynn.cleanframe;
+package app.cleanframe;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
