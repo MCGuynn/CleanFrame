@@ -77,7 +77,7 @@ final class DeviceMarks {
         dir.mkdirs();
         @SuppressWarnings("deprecation")
         long version = android.os.Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
-        return new File(dir, pkg + "-" + version + "-v2" + ext);
+        return new File(dir, pkg + "-" + version + "-v3" + ext);
     }
 
     /** Builds (or reads back) the mark for one package; null when its icon has no usable logo layer. */
@@ -175,12 +175,17 @@ final class DeviceMarks {
             r += (p >> 16) & 0xFF; g += (p >> 8) & 0xFF; b += p & 0xFF; n++;
         }
         r /= n; g /= n; b /= n;
+        /* On a dark background, anything darker (pupils, shadows) is a cut-out, not part of the logo. */
+        double bgLuma = .2126 * r + .7152 * g + .0722 * b;
+        boolean dark = bgLuma < 90;
         for (int i = 0; i < px.length; i++) {
             int p = px[i], a = p >>> 24;
             if (a == 0) continue;
-            double dr = ((p >> 16) & 0xFF) - r, dg = ((p >> 8) & 0xFF) - g, db = (p & 0xFF) - b;
+            int pr = (p >> 16) & 0xFF, pg = (p >> 8) & 0xFF, pb = p & 0xFF;
+            double dr = pr - r, dg = pg - g, db = pb - b;
             double d = Math.sqrt(dr * dr + dg * dg + db * db);
-            if (d < 40) a = 0;
+            if (dark && .2126 * pr + .7152 * pg + .0722 * pb <= bgLuma + 6) a = 0;
+            else if (d < 40) a = 0;
             else if (d < 70) a = (int) (a * (d - 40) / 30);
             px[i] = (a << 24) | (p & 0x00FFFFFF);
         }
