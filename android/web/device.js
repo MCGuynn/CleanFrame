@@ -35,9 +35,7 @@
       catch (e) { done({ message: 'Could not read installed apps.' }); return; }
       list.forEach(function (a) {
         var brand = P.brandFor ? P.brandFor(a.pkg) : '';
-        /* bubo styles its name in lower case, whatever the TV label says. */
-        var name = String(a.name).replace(/^bubo\b/i, 'bubo');
-        out.push({ appId: a.pkg, name: name, brand: brand, icon: brand ? '' : (P.iconPrefix || '') + encodeURIComponent(a.pkg) + '.png' });
+        out.push({ appId: a.pkg, name: a.name, brand: brand, icon: brand ? '' : (P.iconPrefix || '') + encodeURIComponent(a.pkg) + '.png' });
       });
       done(null, out);
     }, 0);

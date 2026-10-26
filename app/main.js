@@ -330,13 +330,15 @@
     }
     return null;
   }
+  /* Brands that write their name in lower case, whatever the TV label (or an older save) says. */
+  function styledName(n) { return String(n).replace(/^bubo\b/i, 'bubo'); }
   function restorableBrand(b) { return ['hbomax', 'spotify', 'tubi'].indexOf(b) >= 0 || !!(P.markIds && P.markIds.indexOf(b) >= 0); }
   function clean(saved) {
     var s = saved && typeof saved === 'object' ? saved : {}, modern = s.look && typeof s.look === 'object' ? s.look : s;
     var legacyList = s.theme === 'list', h = [], recent = [], records = Array.isArray(s.appRecords) ? s.appRecords : [];
     records.slice(0, 256).forEach(function (a) {
       if (!a || !safeId(a.id) || !safeId(a.appId) || typeof a.name !== 'string' || !a.name.trim() || app(a.id)) return;
-      APPS.push({ id: a.id, appId: a.appId, name: a.name.slice(0, 160), brand: restorableBrand(a.brand) ? a.brand : '', mark: restorableBrand(a.brand), icon: safeIcon(a.icon) });
+      APPS.push({ id: a.id, appId: a.appId, name: styledName(a.name.slice(0, 160)), brand: restorableBrand(a.brand) ? a.brand : '', mark: restorableBrand(a.brand), icon: safeIcon(a.icon) });
     });
     (Array.isArray(s.home) ? s.home : Array.isArray(s.dock) ? s.dock : []).forEach(function (id) {
       if (!safeId(id) || h.indexOf(id) >= 0 || h.length >= CAP) return;
@@ -485,7 +487,7 @@
         if (!a) { a = { id: id }; APPS.push(a); }
         a.appId = entry.appId; a.brand = entry.brand || ''; a.mark = !!entry.brand;
         a.icon = safeIcon(entry.icon);
-        a.name = PRIMARY.indexOf(id) >= 0 ? PRIMARY_APPS[PRIMARY.indexOf(id)].name : String(entry.name).slice(0, 160);
+        a.name = PRIMARY.indexOf(id) >= 0 ? PRIMARY_APPS[PRIMARY.indexOf(id)].name : styledName(String(entry.name).slice(0, 160));
         ALPHA.push(id);
       });
       ALPHA.sort(function (a, b) { return app(a).name.toLowerCase().localeCompare(app(b).name.toLowerCase()); });

@@ -32,6 +32,8 @@ final class DeviceMarks {
     static final String PREFIX = "pkg-";
     private static final int N = 240;
     private static final double MAX_COVER = 0.62, MIN_COVER = 0.01;
+    /* Apps whose TV banner carries the brand's own logo where the icon does not (bubo: lower-case wordmark). */
+    private static final Set<String> BANNER_FIRST = new HashSet<>(java.util.Arrays.asList("app.bubo.tv"));
 
     private DeviceMarks() {}
 
@@ -77,7 +79,7 @@ final class DeviceMarks {
         dir.mkdirs();
         @SuppressWarnings("deprecation")
         long version = android.os.Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
-        return new File(dir, pkg + "-" + version + "-v3" + ext);
+        return new File(dir, pkg + "-" + version + "-v5" + ext);
     }
 
     /** Builds (or reads back) the mark for one package; null when its icon has no usable logo layer. */
@@ -87,10 +89,12 @@ final class DeviceMarks {
             String s = new String(Files.readAllBytes(json.toPath()), "UTF-8");
             return s.isEmpty() ? null : new JSONObject(s);
         }
-        Drawable icon = c.getPackageManager().getApplicationIcon(pkg);
-        /* 1. The icon's own transparent logo layer (most Android TV apps). */
+        PackageManager pm = c.getPackageManager();
+        Drawable banner = BANNER_FIRST.contains(pkg) ? pm.getApplicationBanner(pkg) : null;
+        Drawable icon = banner != null ? banner : pm.getApplicationIcon(pkg);
+        /* 1. The icon's own transparent logo layer (most Android TV apps). A banner is one opaque tile. */
         int[] px = render(icon, true);
-        JSONObject m = analyse(px);
+        JSONObject m = banner != null ? null : analyse(px);
         /* 2. A logo on one flat colour (a navy square with an owl, say): drop that colour. */
         if (m == null) {
             px = render(icon, false);
@@ -118,7 +122,10 @@ final class DeviceMarks {
             if (!logoLayerOnly && a.getBackground() != null) { a.getBackground().setBounds(-pad, -pad, N + pad, N + pad); a.getBackground().draw(canvas); }
             if (a.getForeground() != null) { a.getForeground().setBounds(-pad, -pad, N + pad, N + pad); a.getForeground().draw(canvas); }
         } else {
-            icon.setBounds(0, 0, N, N);
+            /* Fit, keeping the aspect ratio: banners are 16:9. */
+            int iw = icon.getIntrinsicWidth(), ih = icon.getIntrinsicHeight(), w = N, h = N;
+            if (iw > 0 && ih > 0 && iw != ih) { if (iw > ih) h = N * ih / iw; else w = N * iw / ih; }
+            icon.setBounds((N - w) / 2, (N - h) / 2, (N + w) / 2, (N + h) / 2);
             icon.draw(canvas);
         }
         int[] px = new int[N * N];
