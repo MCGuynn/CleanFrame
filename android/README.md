@@ -30,7 +30,7 @@ All under **Settings › Google TV**. Each option changes with OK.
 ### Home row, white icons and Unsplash
 
 - **Up to 24 apps on Home**, still one row (Dock) or one column (List) that scrolls. Add, remove and reorder them in **Settings › Apps on Home** (OK on an app lifts it, Up/Down moves it, OK places it).
-- **White app icons, Arc style.** Bundled marks for YouTube, Netflix, Disney+, Prime Video, Apple TV, HBO Max, Tubi, Spotify, Stremio, Plex, Crunchyroll and fubo. Every other app (Hulu, ESPN, Peacock, Bubo…) gets a white mark made on the TV from the logo layer of its own icon. Icons with no logo layer but a flat background (a logo on a navy square, say) get that colour removed instead. Only busy, photo-like icons keep their original colours. Switch with Settings › Google TV › App icons.
+- **White app icons, Arc style.** Bundled marks for YouTube, Netflix, Disney+, Prime Video, Apple TV, HBO Max, Tubi, Spotify, Stremio, Plex, Crunchyroll and fubo. Every other app (Hulu, ESPN, Peacock, bubo…) gets a white mark made on the TV from the logo layer of its own icon. Icons with no logo layer but a flat background (a logo on a navy square, say) get that colour removed instead. Only busy, photo-like icons keep their original colours. Switch with Settings › Google TV › App icons.
 - **Unsplash wallpapers** with your own developer Access Key: Settings › Google TV › Unsplash wallpapers.
   1. Create an app at <https://unsplash.com/oauth/applications> and copy its **Access Key**.
   2. *Access key* → OK opens the TV keyboard (or type it with the Google TV remote app on your phone).
